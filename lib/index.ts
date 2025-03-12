@@ -72,7 +72,7 @@ export async function generateResponse(chatRequest : ChatRequest) : Promise<Chat
 export async function askWithDeepSeek(chatRequest : ChatRequest) : Promise<ChatResponse>{
     const openai = new OpenAI({
         baseURL: 'https://api.deepseek.com',
-        apiKey: process.env.DEEPSEEK_API || '',
+        apiKey: process.env.DEEPSEEK_API2 || '',
     });
 
     const completion = await openai.chat.completions.create({

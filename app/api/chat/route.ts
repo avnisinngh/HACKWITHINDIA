@@ -21,7 +21,7 @@ export async function POST(req : NextRequest){
 
         const response = await generateResponse({ prompt : parsedSchema.data.prompt });
 
-        return NextResponse.json({ response });
+        return NextResponse.json({ message : response });
 
     }catch(err){
         console.log("Error while generating response : " , err);

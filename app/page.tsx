@@ -1,103 +1,291 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Brain, Send, Sparkles, Command, Image, Presentation, Music, Video, Code, History, Trash2, Star } from 'lucide-react';
+
+interface ChatHistoryItem {
+  prompt: string;
+  result: string;
+  model: string;
+  timestamp: number;
+  rating?: {
+    score: number;
+  };
+}
+
+interface CustomSelectionButtonProps {
+  selectedAIModel: string;
+  setSelectedAIModel: (model: string) => void;
+}
+
+const CustomSelectionButton = ({ selectedAIModel, setSelectedAIModel }: CustomSelectionButtonProps) => {
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (showModelSelector && !target.closest(".model-selector")) {
+        setShowModelSelector(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showModelSelector])
+
+  const aiModels = [
+    { id : "gemini-2-flash" , name : "Gemini 2.0" , description : "Fast and Accurate model" },
+    { id: "gpt-3.5-turbo", name: "GPT 3.5 Turbo", description: "OpenAI's fast and cost-effective model" },
+    { id: "gpt-4", name: "GPT 4", description: "OpenAI's most advanced model" },
+  ];
+
+  const handleModelSelect = (modelId: string) => {
+    setSelectedAIModel(modelId)
+    setShowModelSelector(false)
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="relative">
+      <button
+        onClick={() => setShowModelSelector(!showModelSelector)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-sm text-gray-300"
+      >
+        <Brain className="w-4 h-4 text-purple-400" />
+        <span>{aiModels.find((m) => m.id === selectedAIModel)?.name || "Select Model"}</span>
+      </button>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {showModelSelector && (
+        <div className="absolute bottom-full mb-2 left-0 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl z-10 model-selector">
+          <div className="p-2">
+            {aiModels.map((model) => (
+              <button
+                key={model.id}
+                onClick={() => handleModelSelect(model.id)}
+                className={`w-full text-left p-2 rounded-lg flex items-center gap-2 transition-colors ${
+                  selectedAIModel === model.id
+                    ? "bg-purple-500/20 text-purple-300"
+                    : "hover:bg-white/10 text-gray-300"
+                }`}
+              >
+                <div className="flex-1">
+                  <div className="font-medium">{model.name}</div>
+                  <div className="text-xs text-gray-400">{model.description}</div>
+                </div>
+                {selectedAIModel === model.id && <div className="w-2 h-2 rounded-full bg-purple-400"></div>}
+              </button>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }
+
+function App() {
+  const [prompt, setPrompt] = useState('');
+  const [result, setResult] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [currentRating, setCurrentRating] = useState<number | null>(null);
+  const [selectedModel, setSelectedModel] = useState("gpt-3.5-turbo");
+  const [usedModel, setUsedModel] = useState('');
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('chatHistory');
+    if (savedHistory) {
+      setChatHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+  }, [chatHistory]);
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    
+    setIsGenerating(true);
+    setResult('');
+    setCurrentRating(null);
+    
+    try {
+      const response = await axios.post('/api/chat', { 
+        prompt: prompt,
+        model: selectedModel 
+      });
+      
+      setResult(response.data.message.response);
+      setUsedModel(response.data.message.model);
+
+      const newHistoryItem: ChatHistoryItem = {
+        prompt,
+        result: response.data.message.response,
+        model: response.data.message.model,
+        timestamp: Date.now(),
+      };
+      setChatHistory(prev => [newHistoryItem, ...prev]);
+    } catch (error) {
+      console.error("Generation error:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleRating = (score: number) => {
+    setCurrentRating(score);
+    setChatHistory(prev => {
+      if (prev.length === 0) return prev;
+      const updated = [...prev];
+      updated[0] = {
+        ...updated[0],
+        rating: { score },
+      };
+      return updated;
+    });
+  };
+
+  const clearHistory = () => {
+    setChatHistory([]);
+    localStorage.removeItem('chatHistory');
+  };
+
+  const loadHistoryItem = (item: ChatHistoryItem) => {
+    setPrompt(item.prompt);
+    setSelectedModel(item.model);
+    setResult(item.result);
+    setCurrentRating(item.rating?.score || null);
+    setShowHistory(false);
+  };
+
+  const renderRatingStars = (rating: number | undefined) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-4 h-4 ${
+              (rating || 0) >= star
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-400'
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-950">
+      <nav className="border-b border-white/10 bg-black/20 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Command className="w-8 h-8 text-purple-400" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
+                Omni AI
+              </span>
+            </div>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+            >
+              <History className="w-5 h-5 text-purple-400" />
+              <span className="text-gray-200">History</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <>
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 mb-4">
+              One Platform, Infinite Possibilities
+            </h1>
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+              Access multiple AI models through a single, powerful interface. Transform your ideas into reality with Omni AI.
+            </p>
+          </div>
+
+          <div className="bg-black/30 rounded-2xl p-6 backdrop-blur-xl border border-white/10">
+            <div className="relative">
+              <CustomSelectionButton
+                selectedAIModel={selectedModel}
+                setSelectedAIModel={setSelectedModel}
+              />
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="w-full h-32 bg-transparent text-white placeholder-gray-400 border-none focus:ring-2 focus:ring-purple-400 rounded-xl resize-none p-4"
+                placeholder="Enter your prompt here..."
+              />
+              <button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || isGenerating}
+                className={`absolute bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${
+                  !prompt.trim() || isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'
+                }`}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Generate</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8 bg-black/30 rounded-2xl p-6 backdrop-blur-xl border border-white/10 min-h-[200px]">
+            {result ? (
+              <div>
+                <div className="text-gray-200 whitespace-pre-wrap mb-6">{result}</div>
+                <div className='w-full py-4 flex items-center justify-end'>
+                  <div className='text-gray-200 whitespace-nowrap px-4 text-base'>{usedModel}</div>
+                </div>
+                <div className="border-t border-white/10 pt-6">
+                  <div className="flex items-center gap-4">
+                    <span className="text-gray-300">Rate this response:</span>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((score) => (
+                        <button
+                          key={score}
+                          onClick={() => handleRating(score)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            currentRating === score
+                              ? 'bg-purple-500/30 text-purple-400'
+                              : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                          }`}
+                        >
+                          <Star className={`w-5 h-5 ${
+                            currentRating && score <= currentRating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : ''
+                          }`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-400 flex flex-col items-center justify-center h-full">
+                <Sparkles className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+                <p>Your AI-generated content will appear here</p>
+              </div>
+            )}
+          </div>
+        </>
+      </main>
+    </div>
+  );
+}
+
+export default App;
