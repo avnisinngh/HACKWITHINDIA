@@ -47,18 +47,24 @@ export async function  askWithGemini(chatRequest : ChatRequest) : Promise<ChatRe
 }
 
 export async function generateResponse(chatRequest : ChatRequest) : Promise<ChatResponse>{
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API || '');
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash'});
-    const prompt = `"${chatRequest.prompt}" --------------------------------------- ${injectedPrompt}`;
 
-    const answer = (await model.generateContent(prompt)).response.text().trim();
+    try{
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API || '');
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash'});
+        const prompt = `"${chatRequest.prompt}" --------------------------------------- ${injectedPrompt}`;
 
-    console.log("choosed model : " , answer);
+        const answer = (await model.generateContent(prompt)).response.text().trim();
 
-    switch(answer){
-        case listOfModels[0].name : return await askWithGemini(chatRequest);
-        case listOfModels[1].name : return  await askWithDeepSeek(chatRequest);
-        default : return await askWithGemini(chatRequest);
+        console.log("choosed model : " , answer);
+
+        switch(answer){
+            case listOfModels[0].name : return await askWithGemini(chatRequest);
+            case listOfModels[1].name : return  await askWithDeepSeek(chatRequest);
+            default : return await askWithGemini(chatRequest);
+        }
+    }catch(err){
+        console.log("An error occured while selecting model defaulting to gemini : " , err);
+        return await askWithGemini(chatRequest);
     }
 }
 
