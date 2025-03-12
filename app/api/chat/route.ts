@@ -1,4 +1,4 @@
-import { askWithGemini } from '@/lib';
+import { askWithDeepSeek, askWithGemini, generateResponse } from '@/lib';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -19,11 +19,10 @@ export async function POST(req : NextRequest){
             );
         }
 
-        const response = await askWithGemini({ prompt : parsedSchema.data.prompt });
+        const response = await generateResponse({ prompt : parsedSchema.data.prompt });
 
-        return NextResponse.json({
-            message : response
-        });
+        return NextResponse.json({ response });
+
     }catch(err){
         console.log("Error while generating response : " , err);
         return NextResponse.json(
