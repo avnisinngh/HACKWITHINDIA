@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Brain, Send, Sparkles, Command, Image, Presentation, Music, Video, Code, History, Trash2, Star } from 'lucide-react';
+import { Brain, Send, Sparkles, Command , History, Star } from 'lucide-react';
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
+import 'highlight.js/styles/github-dark.css'
 
 interface ChatHistoryItem {
   prompt: string;
@@ -35,9 +39,9 @@ const CustomSelectionButton = ({ selectedAIModel, setSelectedAIModel }: CustomSe
   }, [showModelSelector])
 
   const aiModels = [
+    { id : "auto" , name : "Auto" , description : "Automatically choose the best model" },
     { id : "gemini-2-flash" , name : "Gemini 2.0" , description : "Fast and Accurate model" },
-    { id: "gpt-3.5-turbo", name: "GPT 3.5 Turbo", description: "OpenAI's fast and cost-effective model" },
-    { id: "gpt-4", name: "GPT 4", description: "OpenAI's most advanced model" },
+    { id : "deepseek-chat" , name : "Deepseek R1" , description : "Model for intense and complex worload" },
   ];
 
   const handleModelSelect = (modelId: string) => {
@@ -49,7 +53,7 @@ const CustomSelectionButton = ({ selectedAIModel, setSelectedAIModel }: CustomSe
     <div className="relative">
       <button
         onClick={() => setShowModelSelector(!showModelSelector)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-sm text-gray-300"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-sm text-gray-300 cursor-pointer"
       >
         <Brain className="w-4 h-4 text-purple-400" />
         <span>{aiModels.find((m) => m.id === selectedAIModel)?.name || "Select Model"}</span>
@@ -62,7 +66,7 @@ const CustomSelectionButton = ({ selectedAIModel, setSelectedAIModel }: CustomSe
               <button
                 key={model.id}
                 onClick={() => handleModelSelect(model.id)}
-                className={`w-full text-left p-2 rounded-lg flex items-center gap-2 transition-colors ${
+                className={`w-full text-left p-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
                   selectedAIModel === model.id
                     ? "bg-purple-500/20 text-purple-300"
                     : "hover:bg-white/10 text-gray-300"
@@ -89,7 +93,7 @@ function App() {
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [currentRating, setCurrentRating] = useState<number | null>(null);
-  const [selectedModel, setSelectedModel] = useState("gpt-3.5-turbo");
+  const [selectedModel, setSelectedModel] = useState("auto");
   const [usedModel, setUsedModel] = useState('');
 
   useEffect(() => {
@@ -128,6 +132,7 @@ function App() {
       setChatHistory(prev => [newHistoryItem, ...prev]);
     } catch (error) {
       console.error("Generation error:", error);
+      setResult("An error occured while generating response!!");
     } finally {
       setIsGenerating(false);
     }
@@ -209,7 +214,7 @@ function App() {
             </p>
           </div>
 
-          <div className="bg-black/30 rounded-2xl p-6 backdrop-blur-xl border border-white/10">
+          <div className="bg-black/30 rounded-2xl p-6 backdrop-blur-xl border border-white/10 focus:outline-none">
             <div className="relative">
               <CustomSelectionButton
                 selectedAIModel={selectedModel}
@@ -218,7 +223,7 @@ function App() {
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="w-full h-32 bg-transparent text-white placeholder-gray-400 border-none focus:ring-2 focus:ring-purple-400 rounded-xl resize-none p-4"
+                className="w-full h-32 bg-transparent text-white placeholder-gray-400 border-none focus:ring-2 focus:ring-purple-400 rounded-xl resize-none p-4 focus:outline-none"
                 placeholder="Enter your prompt here..."
               />
               <button
@@ -246,9 +251,11 @@ function App() {
           <div className="mt-8 bg-black/30 rounded-2xl p-6 backdrop-blur-xl border border-white/10 min-h-[200px]">
             {result ? (
               <div>
-                <div className="text-gray-200 whitespace-pre-wrap mb-6">{result}</div>
+                <div className="text-gray-200 whitespace-pre-wrap mb-6">
+                  <MarkdownRenderer content={result}/>
+                </div>
                 <div className='w-full py-4 flex items-center justify-end'>
-                  <div className='text-gray-200 whitespace-nowrap px-4 text-base'>{usedModel}</div>
+                  <div className='text-gray-200 whitespace-nowrap px-4 text-base'>{selectedModel === 'auto' ? 'Gemini 2.0 Flash' : selectedModel}</div>
                 </div>
                 <div className="border-t border-white/10 pt-6">
                   <div className="flex items-center gap-4">
@@ -286,6 +293,40 @@ function App() {
       </main>
     </div>
   );
+}
+
+const MarkdownRenderer = ({ content }: { content: string }) => {
+  return (
+    <ReactMarkdown
+      // className="prose prose-invert max-w-none"
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeHighlight]}
+      components={{
+        a: ({ node, ...props }) => (
+          <a {...props} className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer" />
+        ),
+        code: ({ node, className, children, ...props }) => {
+          const match = /language-(\w+)/.exec(className || '')
+          return match ? (
+            <div className="bg-gray-900 rounded-lg p-4 my-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-400 text-sm">{match[1]}</span>
+              </div>
+              <code className={className} {...props}>
+                {children}
+              </code>
+            </div>
+          ) : (
+            <code className="bg-gray-800 px-2 py-1 rounded text-pink-400" {...props}>
+              {children}
+            </code>
+          )
+        }
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
 }
 
 export default App;
