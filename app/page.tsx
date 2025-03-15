@@ -94,7 +94,7 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentRating, setCurrentRating] = useState<number | null>(null);
   const [selectedModel, setSelectedModel] = useState("auto");
-  const [usedModel, setUsedModel] = useState('');
+  // const [usedModel, setUsedModel] = useState('');
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('chatHistory');
@@ -121,7 +121,7 @@ function App() {
       });
       
       setResult(response.data.message.response);
-      setUsedModel(response.data.message.model);
+      // setUsedModel(response.data.message.model);
 
       const newHistoryItem: ChatHistoryItem = {
         prompt,
@@ -151,35 +151,35 @@ function App() {
     });
   };
 
-  const clearHistory = () => {
-    setChatHistory([]);
-    localStorage.removeItem('chatHistory');
-  };
+  // const clearHistory = () => {
+  //   setChatHistory([]);
+  //   localStorage.removeItem('chatHistory');
+  // };
 
-  const loadHistoryItem = (item: ChatHistoryItem) => {
-    setPrompt(item.prompt);
-    setSelectedModel(item.model);
-    setResult(item.result);
-    setCurrentRating(item.rating?.score || null);
-    setShowHistory(false);
-  };
+  // const loadHistoryItem = (item: ChatHistoryItem) => {
+  //   setPrompt(item.prompt);
+  //   setSelectedModel(item.model);
+  //   setResult(item.result);
+  //   setCurrentRating(item.rating?.score || null);
+  //   setShowHistory(false);
+  // };
 
-  const renderRatingStars = (rating: number | undefined) => {
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${
-              (rating || 0) >= star
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-400'
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
+  // const renderRatingStars = (rating: number | undefined) => {
+  //   return (
+  //     <div className="flex gap-1">
+  //       {[1, 2, 3, 4, 5].map((star) => (
+  //         <Star
+  //           key={star}
+  //           className={`w-4 h-4 ${
+  //             (rating || 0) >= star
+  //               ? 'fill-yellow-400 text-yellow-400'
+  //               : 'text-gray-400'
+  //           }`}
+  //         />
+  //       ))}
+  //     </div>
+  //   );
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-950">
@@ -302,10 +302,10 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeHighlight]}
       components={{
-        a: ({ node, ...props }) => (
+        a: ({  ...props }) => (
           <a {...props} className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer" />
         ),
-        code: ({ node, className, children, ...props }) => {
+        code: ({  className, children, ...props }) => {
           const match = /language-(\w+)/.exec(className || '')
           return match ? (
             <div className="bg-gray-900 rounded-lg p-4 my-4">

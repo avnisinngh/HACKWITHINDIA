@@ -1,4 +1,4 @@
-import { askWithDeepSeek, askWithGemini, generateResponse } from '@/lib';
+import { generateResponse } from '@/lib';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 

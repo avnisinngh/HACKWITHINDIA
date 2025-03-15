@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { OpenAI } from 'openai';
+// import { OpenAI } from 'openai';
 
 interface ChatRequest {
     prompt: string;
