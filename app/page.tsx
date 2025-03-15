@@ -255,7 +255,7 @@ function App() {
                   <MarkdownRenderer content={result}/>
                 </div>
                 <div className='w-full py-4 flex items-center justify-end'>
-                  <div className='text-gray-200 whitespace-nowrap px-4 text-base'>{selectedModel === 'auto' ? 'Gemini 2.0 Flash' : selectedModel}</div>
+                  <div className='text-gray-200 whitespace-nowrap px-4 text-base'>{selectedModel === 'auto' ? selectedModel :'Gemini'}</div>
                 </div>
                 <div className="border-t border-white/10 pt-6">
                   <div className="flex items-center gap-4">
