@@ -1,25 +1,42 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-// import { OpenAI } from 'openai';
+import { GoogleGenerativeAI } from "@google/generative-ai"
+import * as fal from "@fal-ai/serverless-client"
 
 interface ChatRequest {
-    prompt: string;
+  prompt: string
 }
 
 interface ChatResponse {
-    response: string | null,
-    model: string,
+  response: string | null
+  model: string
+}
+
+interface ImageRequest {
+  prompt: string
+  negative_prompt?: string
+  width?: number
+  height?: number
+}
+
+interface ImageResponse {
+  imageUrl: string | null
+  model: string
 }
 
 const listOfModels = [
-    {
-        name: 'gemini-2.0-flash',
-        description: "Performs best for fact checking and general answers. It is not preferred for any coding related task"
-    },
-    {
-        name: 'deepseek-chat',
-        description: 'Works best for tasks related to general coding but may not perform well for tasks requiring deeper knowledge or complex tasks'
-    }
-];
+  {
+    name: "gemini-2.0-flash",
+    description: "Performs best for fact checking and general answers. It is not preferred for any coding related task",
+  },
+  {
+    name: "deepseek-chat",
+    description:
+      "Works best for tasks related to general coding but may not perform well for tasks requiring deeper knowledge or complex tasks",
+  },
+  {
+    name: "Fal",
+    description: "Works best for tasks related to image generation and text-to-image tasks",
+  },
+]
 
 const injectedPrompt = `
     FORGET WHAT I SAID BEFORE, I want you to analyze the prompt that I gave you and return ONLY THE NAME of the model which will
@@ -30,66 +47,118 @@ const injectedPrompt = `
     ${JSON.stringify(listOfModels)}
 
     IMPORTANT: Return ONLY the model name, nothing else. Do not include any reasoning or additional text.
-`;
+`
 
 export async function askWithGemini(chatRequest: ChatRequest): Promise<ChatResponse> {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API || '');
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API || "")
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 
-    const result = await model.generateContent(chatRequest.prompt);
-    const answer = result.response.text();
+  const result = await model.generateContent(chatRequest.prompt)
+  const answer = result.response.text()
 
-    return {
-        response: answer,
-        model: 'Gemini 2.0 Flash'
-    };
+  return {
+    response: answer,
+    model: "Gemini 2.0 Flash",
+  }
 }
 
 export async function askWithDeepSeek(chatRequest: ChatRequest): Promise<ChatResponse> {
-    const apiKey = process.env.DEEPSEEK_API || '';
-    if (!apiKey) throw new Error('DeepSeek API key is missing!');
+  const apiKey = process.env.DEEPSEEK_API || ""
+  if (!apiKey) throw new Error("DeepSeek API key is missing!")
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-            model: 'deepseek/deepseek-chat:free',
-            messages: [{ role: 'user', content: chatRequest.prompt }],
-            max_tokens: 10000,
-        }),
-    });
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: "deepseek/deepseek-chat:free",
+      messages: [{ role: "user", content: chatRequest.prompt }],
+      max_tokens: 10000,
+    }),
+  })
 
-    if (!response.ok) throw new Error(`API Error: ${response.status} - ${await response.text()}`);
+  if (!response.ok) throw new Error(`API Error: ${response.status} - ${await response.text()}`)
 
-    const completion = await response.json();
-    const choice = completion.choices?.[0];
-    const responseContent = choice?.message?.content || choice?.message?.reasoning;
+  const completion = await response.json()
+  const choice = completion.choices?.[0]
+  const responseContent = choice?.message?.content || choice?.message?.reasoning
+
+  return {
+    response: responseContent,
+    model: "deepseek-chat",
+  }
+}
+
+export async function generateImage(imageRequest: ImageRequest): Promise<ImageResponse> {
+  try {
+    // Configure Fal client
+    fal.config({
+      proxyUrl: "/api/fal/proxy",
+    })
+
+    // Set default values if not provided
+    const width = imageRequest.width || 1024
+    const height = imageRequest.height || 1024
+    const negative_prompt = imageRequest.negative_prompt || "low quality, blurry, distorted, deformed"
+
+    // Call Fal API to generate image using Stable Diffusion XL
+    const result = await fal.subscribe("fal-ai/fast-sdxl", {
+      input: {
+        prompt: imageRequest.prompt,
+        negative_prompt,
+        width,
+        height,
+      },
+    })
+
+    const typedResult = result as { images: { url: string }[] }
+    if (!typedResult.images || typedResult.images.length === 0) {
+      throw new Error("No images were generated")
+    }
 
     return {
-        response: responseContent,
-        model: 'deepseek-chat',
-    };
+      imageUrl: (result as { images: { url: string }[] }).images[0].url,
+      model: "Stable Diffusion XL",
+    }
+  } catch (error) {
+    console.error("Error generating image:", error)
+    return {
+      imageUrl: null,
+      model: "Stable Diffusion XL",
+    }
+  }
 }
-
-
 
 export async function generateResponse(chatRequest: ChatRequest): Promise<ChatResponse> {
-    try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API || '');
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-        const prompt = `"${chatRequest.prompt}" --------------------------------------- ${injectedPrompt}`;
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API || "")
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const prompt = `"${chatRequest.prompt}" --------------------------------------- ${injectedPrompt}`
 
-        const answer = (await model.generateContent(prompt)).response.text().trim();
+    const answer = (await model.generateContent(prompt)).response.text().trim()
 
-        console.log("Chosen model: ", answer);
+    console.log("Chosen model: ", answer)
 
-        switch (answer) {
-            case listOfModels[0].name: return await askWithGemini(chatRequest);
-            case listOfModels[1].name: return await askWithDeepSeek(chatRequest);
-            default: return await askWithGemini(chatRequest);
+    switch (answer) {
+      case listOfModels[0].name:
+        return await askWithGemini(chatRequest)
+      case listOfModels[1].name:
+        return await askWithDeepSeek(chatRequest)
+        case listOfModels[2].name: {
+            const imageRequest: ImageRequest = {
+                prompt: chatRequest.prompt,
+            }
+            const imageResponse = await generateImage(imageRequest)
+            return {
+                response: imageResponse.imageUrl,
+                model: imageResponse.model,
+            }
         }
-    } catch (err) {
-        console.log("An error occurred while selecting the model, defaulting to Gemini: ", err);
-        return await askWithGemini(chatRequest);
+      default:
+        return await askWithGemini(chatRequest)
     }
+  } catch (err) {
+    console.log("An error occurred while selecting the model, defaulting to Gemini: ", err)
+    return await askWithGemini(chatRequest)
+  }
 }
+

@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@api/starryai": "file:.api/apis/starryai",
+    "@fal-ai/serverless-client": "^0.15.0",
     "@google/generative-ai": "^0.24.0",
     "@prisma/client": "^6.5.0",
     "axios": "^1.8.3",
