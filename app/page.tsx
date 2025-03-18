@@ -410,7 +410,7 @@ function App() {
                   <ImageIcon className="w-12 h-12 mx-auto mb-4 text-purple-400" />
                   <p>Your AI-generated image will appear here</p>
                   <p className="text-sm mt-2 max-w-md">
-                    Try prompts like "A futuristic city with flying cars" or "A serene mountain landscape at sunset"
+                    Try prompts like `A futuristic city with flying cars`` or `A serene mountain landscape at sunset`
                   </p>
                 </div>
               )}

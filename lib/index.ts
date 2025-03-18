@@ -22,6 +22,17 @@ interface ImageResponse {
   model: string
 }
 
+interface VideoRequest {
+  prompt: string
+  negative_prompt?: string
+  width?: number  
+  height?: number
+  duration?: number
+}
+interface VideoResponse {
+  videoUrl: string | null
+  model: string
+}
 const listOfModels = [
   {
     name: "gemini-2.0-flash",
@@ -36,6 +47,10 @@ const listOfModels = [
     name: "Fal",
     description: "Works best for tasks related to image generation and text-to-image tasks",
   },
+  {
+    name: "LumaAI",
+    description: "Works best for tasks related to video generation and text-to-video tasks",
+  }
 ]
 
 const injectedPrompt = `
@@ -127,6 +142,62 @@ export async function generateImage(imageRequest: ImageRequest): Promise<ImageRe
     }
   }
 }
+export async function generateVideo(videoRequest: VideoRequest): Promise<VideoResponse> {
+  try {
+    const apiKey = process.env.EACHLABS_API?.trim() || ""; // Ensure no accidental spaces
+    if (!apiKey) {
+      throw new Error("Eachlabs API key is missing! Please check your .env file.");
+    }
+
+    console.log("Using Eachlabs API Key:", apiKey ? "✅ Loaded" : "❌ Missing");
+
+    const response = await fetch("https://flows.eachlabs.ai/api/v1/", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: videoRequest.prompt,
+        negative_prompt: videoRequest.negative_prompt || "low quality, blurry, distorted",
+        width: videoRequest.width || 1024,
+        height: videoRequest.height || 1024,
+        duration: videoRequest.duration || 5, // Default: 5 sec
+      }),
+    });
+
+    // Log response status for debugging
+    console.log(`Eachlabs API Response: ${response.status}`);
+
+    if (response.status === 401) {
+      throw new Error("Unauthorized: Invalid API key. Check your Eachlabs account.");
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    const videoUrl = result?.video?.url;
+
+    if (!videoUrl) {
+      throw new Error("API response did not contain a video URL.");
+    }
+
+    return {
+      videoUrl,
+      model: "eachlabs",
+    };
+  } catch (error) {
+    console.error("Error generating video:", error);
+    return {
+      videoUrl: null,
+      model: "eachlabs",
+    };
+  }
+}
+
 
 export async function generateResponse(chatRequest: ChatRequest): Promise<ChatResponse> {
   try {
@@ -151,6 +222,16 @@ export async function generateResponse(chatRequest: ChatRequest): Promise<ChatRe
             return {
                 response: imageResponse.imageUrl,
                 model: imageResponse.model,
+            }
+        }
+        case listOfModels[3].name: {
+            const videoRequest: VideoRequest = {
+                prompt: chatRequest.prompt,
+            }
+            const videoResponse = await generateVideo(videoRequest)
+            return {
+                response: videoResponse.videoUrl,
+                model: videoResponse.model,
             }
         }
       default:
